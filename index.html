@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Boot CRUD with JavaScript</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<style type="text/css">
+.button-85 {
+  padding: 0.6em 2em;
+  border: none;
+  outline: none;
+  color: rgb(255, 255, 255);
+  background: #111;
+  cursor: pointer;
+  position: relative;
+  z-index: 0;
+  border-radius: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-85:before {
+  content: "";
+  background: linear-gradient(
+    45deg,
+    #ff0000,
+    #ff7300,
+    #fffb00,
+    #48ff00,
+    #00ffd5,
+    #002bff,
+    #7a00ff,
+    #ff00c8,
+    #ff0000
+  );
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(5px);
+  -webkit-filter: blur(5px);
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  animation: glowing-button-85 20s linear infinite;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 10px;
+}
+
+@keyframes glowing-button-85 {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 400% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.button-85:after {
+  z-index: -1;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #222;
+  left: 0;
+  top: 0;
+  border-radius: 10px; 
+
+img:hover{
+  width: 400px;
+  height: 400px;
+  overflow: hidden;
+transform: scale(1.08);  
+}  
+}
+</style>
+</head>
+<body bgcolor="cyan">
+<div align="center">
+    <h1 style="color:purple">User Management</h1>
+        <h2 style="color:purple">Add User</h2>
+        <input type="text" id="name" placeholder="Name">
+        <input type="email" id="email" placeholder="Email">
+		<input type="file" id="file">
+        <button class="button-85" onclick="addUser()">Add</button>
+    </div>
+    <div align="center">
+        <h2 style="color:purple">Users</h2>
+		<table  border=1>
+		<thead>
+		<tr>
+			<th>Name</th>
+			<th>Email</th>
+			<th>Photo</th>
+			<th>Action</th>
+		</tr>
+		</thead>
+		<tbody id="userList"></tbody>
+		</table>
+    
+	
+	<hr>
+	<button class="red" onclick="changeBackgroundColor('red')">Red</button>
+        <button class="green" onclick="changeBackgroundColor('green')">Green</button>
+        <button class="yellow" onclick="changeBackgroundColor('yellow')">Yellow</button>
+		<button class="yellow" onclick="changeBackgroundColor('cyan')">Cyan</button>
+		</div>
+
+    <script>
+        function fetchUsers() {
+            $.ajax({
+                url: 'http://localhost:5454/api/users',
+                method: 'GET',
+                success: function(users) {
+                    let userList = $('#userList');
+                    userList.empty();
+                    users.forEach(user => {
+                        userList.append(`<tr><td>${user.name}</td>
+						<td>${user.email}</td>
+						<td><img src="${user.file}" height=80 width=80></img></td>
+                        <td><button  onclick="deleteUser(${user.id})">Delete</button>&nbsp;
+                        <button  onclick="editUser(${user.id})">Edit</button></td>
+                        </tr>`);
+                    });
+                }
+            });
+        }
+
+        function addUser() {
+            let name = $('#name').val();
+            let email = $('#email').val();
+			let fileInput = $('#file')[0];
+			if (name === "" || email === "") {
+                toastr.error("Name and Email cannot be empty!");
+                return;
+            }
+			
+			let reader = new FileReader();
+            reader.onload = function(event) {
+                let photo = event.target.result;
+            $.ajax({
+                url: 'http://localhost:5454/api/users',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ name: name, email: email,file:photo }),
+                success: function() {
+                    fetchUsers();
+                }
+            });
+			};
+			reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        function deleteUser(id) {
+            $.ajax({
+                url: `http://localhost:5454/api/users/${id}`,
+                method: 'DELETE',
+                success: function() {
+                    fetchUsers();
+                }
+            });
+        }
+
+        function editUser(id) {
+            let name = prompt("Enter new name:");
+            let email = prompt("Enter new email:");
+            $.ajax({
+                url: `http://localhost:5454/api/users/${id}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ name: name, email: email }),
+                success: function() {
+                    fetchUsers();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            fetchUsers();
+        });
+		
+		function changeBackgroundColor(color) {
+            //debugger; 
+            document.body.style.backgroundColor = color;
+        }
+    </script>
+</body>
+</html>
